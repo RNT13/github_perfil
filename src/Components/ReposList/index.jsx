@@ -5,16 +5,26 @@ import styles from './ReposList.module.css';
 const ReposList = ({ userName }) => {
     const [repos, setRepos] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         setLoading(true);
+        setError(null);
         const fetchRepos = async () => {
-            const response = await fetch(`https://api.github.com/users/${userName}/repos`);
-            const data = await response.json();
-            setTimeout(() => {
+            try {
+                const response = await fetch(`https://api.github.com/users/${userName}/repos`);
+                if (!response.ok) {
+                    throw new Error(`O perfil de ${userName} não existe no Github`);
+                }
+                const data = await response.json();
+                setTimeout(() => {
+                    setLoading(false);
+                    setRepos(data);
+                }, 2000);
+            } catch (err) {
                 setLoading(false);
-                setRepos(data);
-            }, 2000);
+                setError(err.message);
+            }
         };
 
         fetchRepos();
@@ -23,8 +33,10 @@ const ReposList = ({ userName }) => {
     return (
         <div className='container'>
             {loading ? (
-                <h1>Carregando...</h1>
-            ): (
+                <h1>Carregando repositórios de {userName}</h1>
+            ) : error ? (
+                <h1>{error}</h1>
+            ) : (
                 <ul className={styles.list}>
                     {repos.map(({ id, name, language, html_url }) => (
                         <li className={styles.listItem} key={id}>
